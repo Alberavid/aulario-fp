@@ -297,6 +297,15 @@ main {
   display: none;
 }
 
+body.is-mobile-layout .schedule-wrap {
+  display: none !important;
+}
+
+body.is-mobile-layout .mobile-schedule {
+  display: grid !important;
+  gap: 18px;
+}
+
 .schedule-table {
   width: 1180px;
   min-width: 1180px;
@@ -602,7 +611,7 @@ main {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   body {
     background: #f5f7fb;
   }
@@ -683,11 +692,11 @@ main {
   }
 
   .schedule-wrap {
-    display: none;
+    display: none !important;
   }
 
   .mobile-schedule {
-    display: grid;
+    display: grid !important;
     gap: 18px;
   }
 
@@ -911,6 +920,7 @@ main {
             <tbody id="scheduleBody"></tbody>
           </table>
         </div>
+        <div id="mobileSchedule" class="mobile-schedule"></div>
       </section>
 
       <section id="roomsView" class="view list-view" hidden>
@@ -1016,6 +1026,7 @@ const subjectPalette = [
 ];
 
 document.addEventListener("DOMContentLoaded", boot);
+window.addEventListener("resize", updateResponsiveMode);
 elements.csvInput.addEventListener("change", handleFile);
 elements.reloadDefault.addEventListener("click", loadBundledCsv);
 elements.clearFilters.addEventListener("click", clearFilters);
@@ -1330,6 +1341,7 @@ function render() {
   updateChrome();
   state.filteredRows = getFilteredRows();
   const hasRows = state.allRows.length > 0;
+  updateResponsiveMode();
   elements.emptyState.hidden = hasRows;
   elements.scheduleView.hidden = !hasRows || state.activeView !== "schedule";
   elements.roomsView.hidden = !hasRows || state.activeView !== "rooms";
@@ -1339,6 +1351,10 @@ function render() {
   renderKpis();
   renderSchedule();
   renderEntityViews();
+}
+
+function updateResponsiveMode() {
+  document.body.classList.toggle("is-mobile-layout", window.matchMedia("(max-width: 900px)").matches);
 }
 
 function updateChrome() {
