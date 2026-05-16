@@ -4,49 +4,674 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Aulario FP</title>
-    <link rel="stylesheet" href="styles.css" />
+    <style>
+:root {
+  --bg: #f5f7fb;
+  --panel: #ffffff;
+  --ink: #283345;
+  --muted: #8390a5;
+  --line: #e8edf5;
+  --navy: #121a2d;
+  --violet: #5a4df1;
+  --violet-soft: #eef0ff;
+  --green: #46c28a;
+  --red: #c43c55;
+  --shadow: 0 22px 48px rgba(39, 48, 67, 0.13);
+  --soft-shadow: 0 12px 26px rgba(39, 48, 67, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at 50% -140px, #ffffff 0, #f5f7fb 330px);
+  color: var(--ink);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  letter-spacing: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-height: 116px;
+  padding: 24px clamp(18px, 6vw, 96px);
+  background: var(--navy);
+  color: #fff;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #6957ff, #4e40dd);
+  box-shadow: 0 12px 26px rgba(86, 70, 230, 0.34);
+  font-size: 1.45rem;
+  font-weight: 900;
+}
+
+.brand-copy {
+  min-width: 0;
+}
+
+h1 {
+  color: #fff;
+  font-size: clamp(1.45rem, 3vw, 2.1rem);
+  font-weight: 950;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+h1 em {
+  color: #8d88ff;
+  font-style: italic;
+}
+
+.eyebrow {
+  margin-top: 6px;
+  color: var(--green);
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+main {
+  padding: 30px clamp(16px, 5vw, 84px) 54px;
+}
+
+.file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.file-input {
+  inline-size: 1px;
+  block-size: 1px;
+  position: absolute;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.button,
+.tab {
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 950;
+  padding: 0 22px;
+  text-transform: uppercase;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.button:hover,
+.tab:hover {
+  transform: translateY(-1px);
+}
+
+.button.primary {
+  background: linear-gradient(135deg, #6757f4, #5242df);
+  box-shadow: 0 14px 24px rgba(89, 75, 232, 0.26);
+  color: #fff;
+}
+
+.button.light {
+  background: #fff;
+  color: #1c2638;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
+}
+
+.button.compact {
+  align-self: end;
+  min-height: 50px;
+  background: #eef2f8;
+  color: #46556b;
+}
+
+.filters,
+.status-band,
+.kpis,
+.view-switch,
+.view {
+  max-width: 1460px;
+  margin-inline: auto;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 22px;
+  margin-top: 0;
+  padding: 38px;
+  border: 1px solid var(--line);
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.filters label {
+  min-width: 0;
+}
+
+.label,
+.filters span,
+.kpis span,
+.entity-label {
+  display: block;
+  color: #9aa7ba;
+  font-size: 0.74rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.filters select,
+.filters input {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 12px;
+  border: 1px solid #e2e8f2;
+  border-radius: 999px;
+  background: #f2f5fa;
+  color: #334155;
+  font-weight: 900;
+  padding: 0 22px;
+  text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.filters input {
+  text-transform: none;
+}
+
+.filters select:focus,
+.filters input:focus,
+.button:focus-visible,
+.tab:focus-visible {
+  outline: 4px solid rgba(90, 77, 241, 0.2);
+  outline-offset: 2px;
+}
+
+.status-band {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.3fr) repeat(2, minmax(140px, 0.7fr));
+  gap: 1px;
+  margin-top: 22px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--line);
+  box-shadow: var(--soft-shadow);
+}
+
+.status-band > div,
+.kpis article {
+  min-width: 0;
+  background: #fff;
+  padding: 16px 20px;
+}
+
+.status-band strong,
+.kpis strong {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 1px;
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--line);
+  box-shadow: var(--soft-shadow);
+}
+
+.kpis strong {
+  color: var(--violet);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.view-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  background: #eef2f8;
+  color: #66748a;
+}
+
+.tab.active {
+  background: var(--violet);
+  box-shadow: 0 12px 22px rgba(89, 75, 232, 0.22);
+  color: #fff;
+}
+
+.empty-state {
+  padding: 64px 24px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.schedule-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 34px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.schedule-table {
+  width: 1180px;
+  min-width: 1180px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.schedule-table th,
+.schedule-table td {
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.schedule-table th:last-child,
+.schedule-table td:last-child {
+  border-right: 0;
+}
+
+.schedule-table tr:last-child th,
+.schedule-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.schedule-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 86px;
+  background: #f8faff;
+  color: #9aa7ba;
+  font-size: 0.78rem;
+  font-style: italic;
+  font-weight: 950;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.schedule-table thead th:first-child {
+  left: 0;
+  z-index: 4;
+  width: 230px;
+  text-align: left;
+  padding-left: 30px;
+}
+
+.time-heading {
+  color: var(--violet) !important;
+  font-size: 1rem !important;
+}
+
+.time-heading::before {
+  content: "◷";
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--violet-soft);
+  color: var(--violet);
+  font-size: 0.78rem;
+  font-style: normal;
+}
+
+.day-divider {
+  height: 46px;
+  background: #eef1fb;
+  color: var(--violet);
+  font-size: 0.82rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: uppercase;
+  padding-left: 30px;
+}
+
+.room-cell {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 230px;
+  background: #fff;
+  padding: 24px 30px;
+  text-align: left;
+}
+
+.room-label {
+  display: grid;
+  gap: 8px;
+  border-left: 5px solid var(--room-color);
+  padding-left: 14px;
+}
+
+.room-label strong {
+  color: #334155;
+  font-size: 1.15rem;
+  font-style: italic;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.room-label span {
+  color: #8c87ff;
+  font-size: 0.72rem;
+  font-style: italic;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.day-cell {
+  min-height: 196px;
+  background: #fbfcff;
+  overflow: hidden;
+  padding: 16px 14px;
+}
+
+.cell-stack {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.session {
+  --session-color: #3762e8;
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  min-height: 164px;
+  border-radius: 28px;
+  background: var(--session-color);
+  box-shadow: 0 12px 20px color-mix(in srgb, var(--session-color) 35%, transparent);
+  color: #fff;
+  padding: 20px 22px;
+}
+
+.session-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.session-room {
+  max-width: 75%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #e8edff;
+  font-size: 0.72rem;
+  font-weight: 950;
+  padding: 4px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.session-site {
+  flex: 0 0 auto;
+  max-width: 56px;
+  color: #eef2ff;
+  font-size: 0.74rem;
+  font-weight: 950;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.session-subject {
+  min-height: 48px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-style: italic;
+  font-weight: 950;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.session-footer {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  padding-top: 14px;
+}
+
+.teacher-initial {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-weight: 950;
+}
+
+.session-teacher {
+  color: #eef2ff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-meta {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted-note {
+  color: var(--muted);
+  font-size: 0.95rem;
+  padding: 22px;
+}
+
+.list-view {
+  padding-top: 2px;
+}
+
+.entity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.entity-card {
+  display: grid;
+  gap: 12px;
+  min-height: 156px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: var(--soft-shadow);
+  padding: 18px;
+}
+
+.entity-card h3 {
+  color: #334155;
+  font-size: 1.08rem;
+  font-weight: 950;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.entity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.entity-chip {
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #5450d9;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 5px 9px;
+  overflow-wrap: anywhere;
+}
+
+.entity-list {
+  display: grid;
+  gap: 6px;
+  color: #5d6a7e;
+  font-size: 0.9rem;
+  line-height: 1.28;
+}
+
+.error {
+  color: var(--red);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 1180px) {
+  .topbar {
+    grid-template-columns: auto 1fr;
+  }
+
+  .file-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .filters {
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .brand-mark {
+    width: 50px;
+    height: 50px;
+  }
+
+  .file-actions {
+    flex-direction: column;
+  }
+
+  .button,
+  .tab {
+    width: 100%;
+  }
+
+  .filters,
+  .status-band,
+  .kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .filters {
+    padding: 24px;
+    border-radius: 24px;
+  }
+
+  .schedule-table {
+    min-width: 980px;
+  }
+
+  .kpis strong {
+    font-size: 1.65rem;
+  }
+}
+
+    </style>
   </head>
   <body>
     <header class="topbar">
-      <div>
-        <p class="eyebrow">Planificador de aulas</p>
-        <h1>Aulario FP</h1>
+      <div class="brand-mark" aria-hidden="true">
+        <span>▣</span>
+      </div>
+      <div class="brand-copy">
+        <h1>Aulario FP <em>Euroformac</em></h1>
+        <p class="eyebrow">Consultado el: <span id="consultedAt">-</span></p>
       </div>
       <div class="file-actions">
         <input id="csvInput" class="file-input" type="file" accept=".csv,text/csv" />
-        <label class="button primary" for="csvInput">Cargar CSV</label>
-        <button id="reloadDefault" class="button" type="button">CSV inicial</button>
+        <button id="reloadDefault" class="button primary" type="button">CSV inicial</button>
+        <label class="button light" for="csvInput">Importar nuevo CSV</label>
       </div>
     </header>
 
     <main>
-      <section class="status-band">
-        <div>
-          <span class="label">Archivo</span>
-          <strong id="fileName">Sin datos</strong>
-        </div>
-        <div>
-          <span class="label">Última carga</span>
-          <strong id="loadTime">-</strong>
-        </div>
-        <div>
-          <span class="label">Registros válidos</span>
-          <strong id="rowCount">0</strong>
-        </div>
-      </section>
-
       <section class="filters" aria-label="Filtros del aulario">
         <label>
-          <span>Sede</span>
+          <span>Sede / Campus</span>
           <select id="sedeFilter"></select>
         </label>
         <label>
-          <span>Día</span>
+          <span>Día de la semana</span>
           <select id="dayFilter"></select>
         </label>
         <label>
           <span>Turno</span>
           <select id="shiftFilter"></select>
+        </label>
+        <label>
+          <span>Planta</span>
+          <select id="floorFilter"></select>
         </label>
         <label>
           <span>Aula</span>
@@ -65,6 +690,21 @@
           <input id="searchInput" type="search" placeholder="Aula, profesor, asignatura..." />
         </label>
         <button id="clearFilters" class="button compact" type="button">Limpiar</button>
+      </section>
+
+      <section class="status-band">
+        <div>
+          <span class="label">Archivo</span>
+          <strong id="fileName">Sin datos</strong>
+        </div>
+        <div>
+          <span class="label">Última carga</span>
+          <strong id="loadTime">-</strong>
+        </div>
+        <div>
+          <span class="label">Registros válidos</span>
+          <strong id="rowCount">0</strong>
+        </div>
       </section>
 
       <section class="kpis" aria-label="Resumen">
@@ -130,11 +770,757 @@
           <span class="session-site"></span>
         </div>
         <p class="session-subject"></p>
+        <div class="session-footer">
+          <span class="teacher-initial"></span>
+          <p class="session-teacher"></p>
+        </div>
         <p class="session-meta"></p>
-        <p class="session-teacher"></p>
       </article>
     </template>
+    <script>
+const dayOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+const storageKey = "aulario-fp-csv-v1";
+const state = {
+  allRows: [],
+  filteredRows: [],
+  sourceName: "",
+  loadDate: null,
+  activeView: "schedule",
+  defaultCsv: "",
+  error: "",
+};
 
-    <script src="app.js" defer></script>
+const elements = {
+  csvInput: document.querySelector("#csvInput"),
+  reloadDefault: document.querySelector("#reloadDefault"),
+  consultedAt: document.querySelector("#consultedAt"),
+  fileName: document.querySelector("#fileName"),
+  loadTime: document.querySelector("#loadTime"),
+  rowCount: document.querySelector("#rowCount"),
+  sedeFilter: document.querySelector("#sedeFilter"),
+  dayFilter: document.querySelector("#dayFilter"),
+  shiftFilter: document.querySelector("#shiftFilter"),
+  floorFilter: document.querySelector("#floorFilter"),
+  roomFilter: document.querySelector("#roomFilter"),
+  teacherFilter: document.querySelector("#teacherFilter"),
+  subjectFilter: document.querySelector("#subjectFilter"),
+  searchInput: document.querySelector("#searchInput"),
+  clearFilters: document.querySelector("#clearFilters"),
+  emptyState: document.querySelector("#emptyState"),
+  scheduleTable: document.querySelector(".schedule-table"),
+  scheduleHead: document.querySelector("#scheduleHead"),
+  scheduleBody: document.querySelector("#scheduleBody"),
+  scheduleView: document.querySelector("#scheduleView"),
+  roomsView: document.querySelector("#roomsView"),
+  teachersView: document.querySelector("#teachersView"),
+  subjectsView: document.querySelector("#subjectsView"),
+  roomsList: document.querySelector("#roomsList"),
+  teachersList: document.querySelector("#teachersList"),
+  subjectsList: document.querySelector("#subjectsList"),
+  kpiSessions: document.querySelector("#kpiSessions"),
+  kpiRooms: document.querySelector("#kpiRooms"),
+  kpiTeachers: document.querySelector("#kpiTeachers"),
+  kpiSubjects: document.querySelector("#kpiSubjects"),
+  kpiSites: document.querySelector("#kpiSites"),
+  sessionTemplate: document.querySelector("#sessionTemplate"),
+  tabs: document.querySelectorAll(".tab"),
+};
+
+const filterControls = [
+  elements.sedeFilter,
+  elements.dayFilter,
+  elements.shiftFilter,
+  elements.floorFilter,
+  elements.roomFilter,
+  elements.teacherFilter,
+  elements.subjectFilter,
+];
+
+const subjectPalette = [
+  "#3762e8",
+  "#5040dd",
+  "#0f9f8e",
+  "#db5f57",
+  "#6c5ce7",
+  "#2878d9",
+  "#be4bdb",
+  "#198754",
+  "#d66a1f",
+  "#7b61ff",
+  "#0b7285",
+  "#c2255c",
+];
+
+document.addEventListener("DOMContentLoaded", boot);
+elements.csvInput.addEventListener("change", handleFile);
+elements.reloadDefault.addEventListener("click", loadBundledCsv);
+elements.clearFilters.addEventListener("click", clearFilters);
+elements.searchInput.addEventListener("input", render);
+filterControls.forEach((control) => control.addEventListener("change", render));
+elements.tabs.forEach((tab) => {
+  tab.addEventListener("click", () => {
+    state.activeView = tab.dataset.view;
+    render();
+  });
+});
+
+async function boot() {
+  await primeBundledCsv();
+  const stored = readStoredCsv();
+  if (stored?.text) {
+    loadCsvText(stored.text, stored.name || "CSV guardado", stored.loadedAt);
+    return;
+  }
+  if (state.defaultCsv) {
+    loadCsvText(state.defaultCsv, "PLANIFICADOR DE AULAS (1).csv", new Date().toISOString(), false);
+    return;
+  }
+  render();
+}
+
+async function primeBundledCsv() {
+  try {
+    const response = await fetch("data/planificador.csv", { cache: "no-store" });
+    if (!response.ok) return;
+    state.defaultCsv = await response.text();
+  } catch {
+    state.defaultCsv = "";
+  }
+}
+
+function readStoredCsv() {
+  try {
+    return JSON.parse(localStorage.getItem(storageKey));
+  } catch {
+    return null;
+  }
+}
+
+function handleFile(event) {
+  const [file] = event.target.files;
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const loadedAt = new Date().toISOString();
+    const text = String(reader.result || "");
+    localStorage.setItem(storageKey, JSON.stringify({ text, name: file.name, loadedAt }));
+    loadCsvText(text, file.name, loadedAt);
+    elements.csvInput.value = "";
+  };
+  reader.readAsText(file, "utf-8");
+}
+
+function loadBundledCsv() {
+  if (!state.defaultCsv) {
+    setError("No se ha encontrado el CSV inicial. Carga un archivo para continuar.");
+    return;
+  }
+  localStorage.removeItem(storageKey);
+  loadCsvText(state.defaultCsv, "PLANIFICADOR DE AULAS (1).csv", new Date().toISOString(), false);
+}
+
+function loadCsvText(text, name, loadedAt = new Date().toISOString(), persist = true) {
+  try {
+    const rows = normalizeRows(parseDelimitedText(text));
+    if (!rows.length) throw new Error("El CSV no contiene filas válidas.");
+    state.allRows = rows;
+    state.sourceName = name;
+    state.loadDate = new Date(loadedAt);
+    state.error = "";
+    if (persist) {
+      localStorage.setItem(storageKey, JSON.stringify({ text, name, loadedAt }));
+    }
+    resetFilterOptions();
+    render();
+  } catch (error) {
+    state.allRows = [];
+    state.sourceName = "";
+    state.loadDate = null;
+    state.error = error.message;
+    resetFilterOptions();
+    render();
+  }
+}
+
+function parseDelimitedText(text) {
+  const cleanText = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const delimiter = detectDelimiter(cleanText);
+  const records = [];
+  let row = [];
+  let field = "";
+  let quoted = false;
+
+  for (let i = 0; i < cleanText.length; i += 1) {
+    const char = cleanText[i];
+    const next = cleanText[i + 1];
+
+    if (char === '"') {
+      if (quoted && next === '"') {
+        field += '"';
+        i += 1;
+      } else {
+        quoted = !quoted;
+      }
+      continue;
+    }
+
+    if (char === delimiter && !quoted) {
+      row.push(field);
+      field = "";
+      continue;
+    }
+
+    if (char === "\n" && !quoted) {
+      row.push(field);
+      if (row.some((cell) => cell.trim() !== "")) records.push(row);
+      row = [];
+      field = "";
+      continue;
+    }
+
+    field += char;
+  }
+
+  row.push(field);
+  if (row.some((cell) => cell.trim() !== "")) records.push(row);
+  return records;
+}
+
+function detectDelimiter(text) {
+  const firstLine = text.split(/\r?\n/, 1)[0] || "";
+  const candidates = [";", ",", "\t"];
+  return candidates
+    .map((delimiter) => ({
+      delimiter,
+      count: firstLine.split(delimiter).length,
+    }))
+    .sort((a, b) => b.count - a.count)[0].delimiter;
+}
+
+function normalizeRows(records) {
+  const [headerRow, ...bodyRows] = records;
+  if (!headerRow) return [];
+  const headers = headerRow.map((header) => normalizeHeader(header));
+  const indexes = {
+    time: findColumn(headers, ["horario", "hora"]),
+    day: findColumn(headers, ["dia", "día"]),
+    floor: findColumn(headers, ["planta"]),
+    room: findColumn(headers, ["aula"]),
+    subject: findColumn(headers, ["asignatura"]),
+    cycle: findColumn(headers, ["ciclo master", "ciclo / master", "ciclo"]),
+    course: findColumn(headers, ["curso"]),
+    group: findColumn(headers, ["grupo"]),
+    teacher: findColumn(headers, ["profesor"]),
+    site: findColumn(headers, ["sede"]),
+  };
+
+  const missing = Object.entries(indexes)
+    .filter(([, index]) => index === -1)
+    .map(([key]) => requiredLabels[key]);
+  if (missing.length) {
+    throw new Error(`Faltan columnas: ${missing.join(", ")}.`);
+  }
+
+  return bodyRows
+    .map((row, index) => {
+      const time = clean(row[indexes.time]);
+      const day = normalizeDay(row[indexes.day]);
+      const room = clean(row[indexes.room]) || "Sin aula";
+      const site = normalizeSite(row[indexes.site]);
+      const subject = clean(row[indexes.subject]);
+      const teacher = clean(row[indexes.teacher]);
+      const minutes = timeToMinutes(time);
+
+      return {
+        id: `${index}-${day}-${time}-${room}-${teacher}`,
+        time,
+        minutes,
+        shift: shiftFromMinutes(minutes),
+        day,
+        floor: clean(row[indexes.floor]),
+        room,
+        subject,
+        cycle: clean(row[indexes.cycle]),
+        course: clean(row[indexes.course]),
+        group: clean(row[indexes.group]),
+        teacher,
+        site,
+        searchText: "",
+      };
+    })
+    .filter((item) => item.time && item.day && item.site && item.minutes !== null)
+    .map((item) => ({
+      ...item,
+      searchText: normalizeForSearch(
+        [
+          item.time,
+          item.day,
+          item.room,
+          item.subject,
+          item.cycle,
+          item.course,
+          item.group,
+          item.teacher,
+          item.site,
+          item.floor,
+          item.shift,
+        ].join(" ")
+      ),
+    }))
+    .sort(sortSessions);
+}
+
+const requiredLabels = {
+  time: "Horario",
+  day: "Día",
+  floor: "Planta",
+  room: "Aula",
+  subject: "Asignatura",
+  cycle: "Ciclo / Master",
+  course: "Curso",
+  group: "Grupo",
+  teacher: "Profesor",
+  site: "Sede",
+};
+
+function normalizeHeader(value = "") {
+  return normalizeForSearch(value).replace(/\s+/g, " ").trim();
+}
+
+function findColumn(headers, options) {
+  const normalized = options.map((option) => normalizeHeader(option));
+  return headers.findIndex((header) => normalized.includes(header));
+}
+
+function clean(value = "") {
+  return String(value).replace(/\uFEFF/g, "").trim();
+}
+
+function normalizeForSearch(value = "") {
+  return String(value)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function normalizeDay(value = "") {
+  const raw = normalizeForSearch(value);
+  const match = dayOrder.find((day) => normalizeForSearch(day) === raw);
+  return match || clean(value);
+}
+
+function normalizeSite(value = "") {
+  const raw = clean(value);
+  const key = normalizeForSearch(raw);
+  if (key === "moncloa") return "Moncloa";
+  if (key === "barajas") return "Barajas";
+  return raw;
+}
+
+function timeToMinutes(value = "") {
+  const match = clean(value).match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function shiftFromMinutes(minutes) {
+  if (minutes === null) return "";
+  if (minutes < 14 * 60 + 30) return "Mañana";
+  if (minutes < 18 * 60) return "Tarde";
+  return "Tarde-noche";
+}
+
+function sortSessions(a, b) {
+  return (
+    dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day) ||
+    a.minutes - b.minutes ||
+    a.site.localeCompare(b.site, "es") ||
+    a.room.localeCompare(b.room, "es") ||
+    a.teacher.localeCompare(b.teacher, "es")
+  );
+}
+
+function resetFilterOptions() {
+  fillSelect(elements.sedeFilter, "Todas", unique(state.allRows, "site"));
+  fillSelect(elements.dayFilter, "Todos", dayOrder.filter((day) => state.allRows.some((row) => row.day === day)));
+  fillSelect(elements.shiftFilter, "Todos", unique(state.allRows, "shift"));
+  fillSelect(elements.floorFilter, "Todas", unique(state.allRows, "floor"));
+  fillSelect(elements.roomFilter, "Todas", unique(state.allRows, "room"));
+  fillSelect(elements.teacherFilter, "Todos", unique(state.allRows, "teacher"));
+  fillSelect(elements.subjectFilter, "Todas", unique(state.allRows, "subject"));
+  elements.searchInput.value = "";
+}
+
+function fillSelect(select, emptyLabel, values) {
+  select.replaceChildren();
+  select.append(new Option(emptyLabel, ""));
+  values.forEach((value) => select.append(new Option(value, value)));
+}
+
+function unique(rows, key) {
+  return [...new Set(rows.map((row) => row[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es"));
+}
+
+function render() {
+  updateChrome();
+  state.filteredRows = getFilteredRows();
+  const hasRows = state.allRows.length > 0;
+  elements.emptyState.hidden = hasRows;
+  elements.scheduleView.hidden = !hasRows || state.activeView !== "schedule";
+  elements.roomsView.hidden = !hasRows || state.activeView !== "rooms";
+  elements.teachersView.hidden = !hasRows || state.activeView !== "teachers";
+  elements.subjectsView.hidden = !hasRows || state.activeView !== "subjects";
+  updateTabs();
+  renderKpis();
+  renderSchedule();
+  renderEntityViews();
+}
+
+function updateChrome() {
+  elements.consultedAt.textContent = new Date().toLocaleString("es-ES", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (state.error) {
+    elements.fileName.innerHTML = `<span class="error">${escapeHtml(state.error)}</span>`;
+    elements.loadTime.textContent = "-";
+    elements.rowCount.textContent = "0";
+    return;
+  }
+  elements.fileName.textContent = state.sourceName || "Sin datos";
+  elements.loadTime.textContent = state.loadDate ? state.loadDate.toLocaleString("es-ES") : "-";
+  elements.rowCount.textContent = String(state.allRows.length);
+}
+
+function setError(message) {
+  state.error = message;
+  updateChrome();
+}
+
+function getFilteredRows() {
+  const query = normalizeForSearch(elements.searchInput.value);
+  return state.allRows.filter((row) => {
+    return (
+      filterMatch(row.site, elements.sedeFilter.value) &&
+      filterMatch(row.day, elements.dayFilter.value) &&
+      filterMatch(row.shift, elements.shiftFilter.value) &&
+      filterMatch(row.floor, elements.floorFilter.value) &&
+      filterMatch(row.room, elements.roomFilter.value) &&
+      filterMatch(row.teacher, elements.teacherFilter.value) &&
+      filterMatch(row.subject, elements.subjectFilter.value) &&
+      (!query || row.searchText.includes(query))
+    );
+  });
+}
+
+function filterMatch(value, selected) {
+  return !selected || value === selected;
+}
+
+function updateTabs() {
+  elements.tabs.forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.view === state.activeView);
+  });
+}
+
+function renderKpis() {
+  const rows = state.filteredRows;
+  elements.kpiSessions.textContent = String(rows.length);
+  elements.kpiRooms.textContent = String(unique(rows, "room").length);
+  elements.kpiTeachers.textContent = String(unique(rows, "teacher").length);
+  elements.kpiSubjects.textContent = String(unique(rows, "subject").length);
+  elements.kpiSites.textContent = String(unique(rows, "site").length);
+}
+
+function renderSchedule() {
+  elements.scheduleBody.replaceChildren();
+  const rows = state.filteredRows;
+  const visibleDays = elements.dayFilter.value ? [elements.dayFilter.value] : dayOrder;
+  const times = [...new Set(rows.map((row) => row.time))]
+    .sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
+  sizeScheduleTable(times.length);
+  renderScheduleHead(times);
+
+  if (!times.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = visibleDays.length + 1;
+    td.className = "muted-note";
+    td.textContent = "No hay sesiones con los filtros actuales.";
+    tr.append(td);
+    elements.scheduleBody.append(tr);
+    return;
+  }
+
+  visibleDays.forEach((day) => {
+    const dayRows = rows.filter((row) => row.day === day);
+    if (!dayRows.length) return;
+
+    if (!elements.dayFilter.value) {
+      const dayDivider = document.createElement("tr");
+      const dayCell = document.createElement("th");
+      dayCell.className = "day-divider";
+      dayCell.colSpan = times.length + 1;
+      dayCell.textContent = day;
+      dayDivider.append(dayCell);
+      elements.scheduleBody.append(dayDivider);
+    }
+
+    unique(dayRows, "room").forEach((roomName) => {
+      const roomRows = dayRows.filter((row) => row.room === roomName);
+      const tr = document.createElement("tr");
+      const roomCell = document.createElement("th");
+      roomCell.scope = "row";
+      roomCell.className = "room-cell";
+      roomCell.style.setProperty("--room-color", colorForRoom(roomName));
+      roomCell.append(createRoomLabel(roomName, roomRows, day));
+      tr.append(roomCell);
+
+      times.forEach((time) => {
+        const td = document.createElement("td");
+        td.className = "day-cell";
+        const stack = document.createElement("div");
+        stack.className = "cell-stack";
+        roomRows
+          .filter((row) => row.time === time)
+          .sort(sortSessions)
+          .forEach((session) => stack.append(createSessionCard(session)));
+        td.append(stack);
+        tr.append(td);
+      });
+
+      elements.scheduleBody.append(tr);
+    });
+  });
+}
+
+function sizeScheduleTable(timeCount) {
+  const roomColumnWidth = 230;
+  const timeColumnWidth = 310;
+  const width = roomColumnWidth + Math.max(timeCount, 1) * timeColumnWidth;
+  elements.scheduleTable.style.width = `${width}px`;
+  elements.scheduleTable.style.minWidth = `${width}px`;
+}
+
+function renderScheduleHead(times = []) {
+  const tr = document.createElement("tr");
+  const empty = document.createElement("th");
+  empty.textContent = "Aula";
+  tr.append(empty);
+  times.forEach((time) => {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.className = "time-heading";
+    th.textContent = time;
+    tr.append(th);
+  });
+  elements.scheduleHead.replaceChildren(tr);
+}
+
+function createRoomLabel(roomName, rows, day) {
+  const wrap = document.createElement("div");
+  wrap.className = "room-label";
+
+  const room = document.createElement("strong");
+  room.textContent = roomName;
+
+  const site = document.createElement("span");
+  site.textContent = `Sede: ${unique(rows, "site").join(", ") || "Sin indicar"}`;
+
+  const meta = document.createElement("span");
+  meta.textContent = [
+    elements.dayFilter.value ? "" : day,
+    unique(rows, "floor").length ? `Planta ${unique(rows, "floor").join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  wrap.append(room, site);
+  if (meta.textContent) wrap.append(meta);
+  return wrap;
+}
+
+function createSessionCard(session) {
+  const fragment = elements.sessionTemplate.content.cloneNode(true);
+  const card = fragment.querySelector(".session");
+  const room = fragment.querySelector(".session-room");
+  const site = fragment.querySelector(".session-site");
+  const subject = fragment.querySelector(".session-subject");
+  const meta = fragment.querySelector(".session-meta");
+  const teacher = fragment.querySelector(".session-teacher");
+  const initial = fragment.querySelector(".teacher-initial");
+
+  card.dataset.site = siteKey(session.site);
+  card.style.setProperty("--session-color", colorForSubject(session.subject));
+  room.textContent = [session.cycle, session.course].filter(Boolean).join(" ") || session.room;
+  site.textContent = session.group || session.site;
+  subject.textContent = session.subject || "Sin asignatura";
+  meta.textContent = [session.site, session.floor ? `Planta ${session.floor}` : "", session.shift]
+    .filter(Boolean)
+    .join(" · ");
+  initial.textContent = teacherInitial(session.teacher);
+  teacher.textContent = session.teacher || "Profesor sin indicar";
+  return fragment;
+}
+
+function colorForRoom(roomName = "") {
+  return colorFromPalette(roomName);
+}
+
+function colorForSubject(subjectName = "") {
+  return colorFromPalette(subjectName);
+}
+
+function colorFromPalette(value = "") {
+  const key = normalizeForSearch(value);
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) % 9973;
+  }
+  return subjectPalette[hash % subjectPalette.length];
+}
+
+function teacherInitial(name = "") {
+  const value = clean(name);
+  return value ? value[0].toUpperCase() : "?";
+}
+
+function siteKey(value) {
+  const key = normalizeForSearch(value);
+  if (key === "barajas") return "barajas";
+  if (key === "moncloa") return "moncloa";
+  return "other";
+}
+
+function renderEntityViews() {
+  renderEntityList(elements.roomsList, groupBy(state.filteredRows, "room"), buildRoomEntity);
+  renderEntityList(elements.teachersList, groupBy(state.filteredRows, "teacher"), buildTeacherEntity);
+  renderEntityList(elements.subjectsList, groupBy(state.filteredRows, "subject"), buildSubjectEntity);
+}
+
+function groupBy(rows, key) {
+  return rows.reduce((groups, row) => {
+    const value = row[key] || "Sin indicar";
+    if (!groups.has(value)) groups.set(value, []);
+    groups.get(value).push(row);
+    return groups;
+  }, new Map());
+}
+
+function renderEntityList(container, groups, builder) {
+  container.replaceChildren();
+  if (!groups.size) {
+    const note = document.createElement("p");
+    note.className = "muted-note";
+    note.textContent = "No hay resultados con los filtros actuales.";
+    container.append(note);
+    return;
+  }
+  [...groups.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0], "es"))
+    .forEach(([name, rows]) => container.append(builder(name, rows)));
+}
+
+function buildRoomEntity(name, rows) {
+  return createEntityCard({
+    title: name,
+    label: `${rows.length} sesiones`,
+    chips: [formatUnique(rows, "site"), formatUnique(rows, "floor", "Planta"), formatUnique(rows, "shift")],
+    lines: topValues(rows, "teacher", 4).map(([teacher, count]) => `${teacher} · ${count}`),
+  });
+}
+
+function buildTeacherEntity(name, rows) {
+  return createEntityCard({
+    title: name,
+    label: `${rows.length} sesiones`,
+    chips: [formatUnique(rows, "site"), formatUnique(rows, "room", "Aulas"), formatUnique(rows, "shift")],
+    lines: topValues(rows, "subject", 4).map(([subject, count]) => `${subject} · ${count}`),
+  });
+}
+
+function buildSubjectEntity(name, rows) {
+  return createEntityCard({
+    title: name,
+    label: `${rows.length} sesiones`,
+    chips: [formatUnique(rows, "site"), formatUnique(rows, "cycle", "Ciclo"), formatUnique(rows, "room", "Aulas")],
+    lines: topValues(rows, "teacher", 4).map(([teacher, count]) => `${teacher} · ${count}`),
+  });
+}
+
+function createEntityCard({ title, label, chips, lines }) {
+  const article = document.createElement("article");
+  article.className = "entity-card";
+
+  const labelNode = document.createElement("span");
+  labelNode.className = "entity-label";
+  labelNode.textContent = label;
+
+  const titleNode = document.createElement("h3");
+  titleNode.textContent = title;
+
+  const chipWrap = document.createElement("div");
+  chipWrap.className = "entity-meta";
+  chips.filter(Boolean).forEach((chip) => {
+    const chipNode = document.createElement("span");
+    chipNode.className = "entity-chip";
+    chipNode.textContent = chip;
+    chipWrap.append(chipNode);
+  });
+
+  const list = document.createElement("div");
+  list.className = "entity-list";
+  lines.forEach((line) => {
+    const item = document.createElement("span");
+    item.textContent = line;
+    list.append(item);
+  });
+
+  article.append(labelNode, titleNode, chipWrap, list);
+  return article;
+}
+
+function formatUnique(rows, key, prefix = "") {
+  const values = unique(rows, key);
+  if (!values.length) return "";
+  const text = values.length <= 2 ? values.join(", ") : `${values.length} ${prefix || "valores"}`;
+  if (prefix && values.length > 2) return text;
+  return prefix && values.length <= 2 ? `${prefix}: ${text}` : text;
+}
+
+function topValues(rows, key, limit) {
+  const counts = rows.reduce((map, row) => {
+    const value = row[key] || "Sin indicar";
+    map.set(value, (map.get(value) || 0) + 1);
+    return map;
+  }, new Map());
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es"))
+    .slice(0, limit);
+}
+
+function clearFilters() {
+  filterControls.forEach((control) => {
+    control.value = "";
+  });
+  elements.searchInput.value = "";
+  render();
+}
+
+function escapeHtml(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+    </script>
   </body>
 </html>
