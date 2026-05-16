@@ -545,6 +545,12 @@ body.is-mobile-layout .mobile-schedule {
   gap: 14px;
 }
 
+.occupancy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
 .entity-card {
   display: grid;
   gap: 12px;
@@ -564,10 +570,110 @@ body.is-mobile-layout .mobile-schedule {
   overflow-wrap: anywhere;
 }
 
+.occupancy-card {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: var(--soft-shadow);
+  padding: 18px;
+}
+
+.occupancy-card header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.occupancy-card h3 {
+  color: #334155;
+  font-size: 1.06rem;
+  font-weight: 950;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.occupancy-card header strong {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: var(--violet);
+  font-size: 0.95rem;
+  font-weight: 950;
+  padding: 7px 11px;
+}
+
+.target-control {
+  display: grid;
+  gap: 8px;
+}
+
+.target-control span {
+  color: #9aa7ba;
+  font-size: 0.74rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.target-control input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #e2e8f2;
+  border-radius: 14px;
+  background: #f8faff;
+  color: #334155;
+  font-weight: 950;
+  padding: 0 12px;
+}
+
 .entity-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
+}
+
+.entity-metric {
+  display: grid;
+  gap: 8px;
+  border-radius: 16px;
+  background: #f5f7ff;
+  padding: 12px;
+}
+
+.entity-metric > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.entity-metric span {
+  color: #7b879a;
+  font-size: 0.76rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.entity-metric strong {
+  color: var(--violet);
+  font-size: 1.25rem;
+  font-weight: 950;
+}
+
+.occupancy-bar {
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  background: #e1e7f4;
+}
+
+.occupancy-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--violet), #21b992);
 }
 
 .entity-chip {
@@ -683,6 +789,19 @@ body.is-mobile-layout .mobile-schedule {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+  }
+
+  .occupancy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .occupancy-card {
+    border-radius: 20px;
+    padding: 16px;
+  }
+
+  .occupancy-card header {
+    display: grid;
   }
 
   .tab {
@@ -906,6 +1025,7 @@ body.is-mobile-layout .mobile-schedule {
         <button class="tab active" data-view="schedule" type="button">Programación</button>
         <button class="tab" data-view="rooms" type="button">Aulas</button>
         <button class="tab" data-view="teachers" type="button">Profesores</button>
+        <button class="tab" data-view="occupancy" type="button">Ocupación</button>
         <button class="tab" data-view="subjects" type="button">Asignaturas</button>
       </section>
 
@@ -931,6 +1051,10 @@ body.is-mobile-layout .mobile-schedule {
         <div id="teachersList" class="entity-grid"></div>
       </section>
 
+      <section id="occupancyView" class="view list-view" hidden>
+        <div id="occupancyList" class="occupancy-grid"></div>
+      </section>
+
       <section id="subjectsView" class="view list-view" hidden>
         <div id="subjectsList" class="entity-grid"></div>
       </section>
@@ -953,6 +1077,10 @@ body.is-mobile-layout .mobile-schedule {
     <script>
 const dayOrder = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 const storageKey = "aulario-fp-csv-v1";
+const targetStorageKey = "aulario-fp-teacher-target-hours-v1";
+const defaultClassMinutes = 55;
+const defaultWeeklyTargetHours = 25;
+const sixtyMinuteSlots = new Set(["16:00", "17:00", "18:00", "19:00", "20:00"]);
 const state = {
   allRows: [],
   filteredRows: [],
@@ -961,6 +1089,7 @@ const state = {
   activeView: "schedule",
   defaultCsv: "",
   error: "",
+  teacherTargets: {},
 };
 
 const elements = {
@@ -987,9 +1116,11 @@ const elements = {
   scheduleView: document.querySelector("#scheduleView"),
   roomsView: document.querySelector("#roomsView"),
   teachersView: document.querySelector("#teachersView"),
+  occupancyView: document.querySelector("#occupancyView"),
   subjectsView: document.querySelector("#subjectsView"),
   roomsList: document.querySelector("#roomsList"),
   teachersList: document.querySelector("#teachersList"),
+  occupancyList: document.querySelector("#occupancyList"),
   subjectsList: document.querySelector("#subjectsList"),
   kpiSessions: document.querySelector("#kpiSessions"),
   kpiRooms: document.querySelector("#kpiRooms"),
@@ -1040,6 +1171,7 @@ elements.tabs.forEach((tab) => {
 });
 
 async function boot() {
+  state.teacherTargets = readTeacherTargets();
   await primeBundledCsv();
   const stored = readStoredCsv();
   if (stored?.text) {
@@ -1069,6 +1201,18 @@ function readStoredCsv() {
   } catch {
     return null;
   }
+}
+
+function readTeacherTargets() {
+  try {
+    return JSON.parse(localStorage.getItem(targetStorageKey)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveTeacherTargets() {
+  localStorage.setItem(targetStorageKey, JSON.stringify(state.teacherTargets));
 }
 
 function handleFile(event) {
@@ -1205,11 +1349,13 @@ function normalizeRows(records) {
       const subject = clean(row[indexes.subject]);
       const teacher = clean(row[indexes.teacher]);
       const minutes = timeToMinutes(time);
+      const durationMinutes = durationForTime(time);
 
       return {
         id: `${index}-${day}-${time}-${room}-${teacher}`,
         time,
         minutes,
+        durationMinutes,
         shift: shiftFromMinutes(minutes),
         day,
         floor: clean(row[indexes.floor]),
@@ -1306,6 +1452,10 @@ function shiftFromMinutes(minutes) {
   return "Tarde-noche";
 }
 
+function durationForTime(time) {
+  return sixtyMinuteSlots.has(clean(time)) ? 60 : defaultClassMinutes;
+}
+
 function sortSessions(a, b) {
   return (
     dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day) ||
@@ -1346,6 +1496,7 @@ function render() {
   elements.scheduleView.hidden = !hasRows || state.activeView !== "schedule";
   elements.roomsView.hidden = !hasRows || state.activeView !== "rooms";
   elements.teachersView.hidden = !hasRows || state.activeView !== "teachers";
+  elements.occupancyView.hidden = !hasRows || state.activeView !== "occupancy";
   elements.subjectsView.hidden = !hasRows || state.activeView !== "subjects";
   updateTabs();
   renderKpis();
@@ -1552,7 +1703,7 @@ function createMobileSessionCard(session) {
   const top = document.createElement("div");
   top.className = "mobile-session-top";
   const time = document.createElement("span");
-  time.textContent = session.time;
+  time.textContent = `${session.time} · ${formatHours(session.durationMinutes)}`;
   const cycle = document.createElement("span");
   cycle.textContent = [session.cycle, session.course, session.group ? `Grupo ${session.group}` : ""]
     .filter(Boolean)
@@ -1563,7 +1714,7 @@ function createMobileSessionCard(session) {
   subject.textContent = session.subject || "Sin asignatura";
 
   const teacher = document.createElement("p");
-  teacher.textContent = session.teacher || "Profesor sin indicar";
+  teacher.textContent = `${session.teacher || "Profesor sin indicar"} · ${session.room}`;
 
   card.append(top, subject, teacher);
   return card;
@@ -1630,7 +1781,13 @@ function createSessionCard(session) {
   room.textContent = [session.cycle, session.course].filter(Boolean).join(" ") || session.room;
   site.textContent = session.group || session.site;
   subject.textContent = session.subject || "Sin asignatura";
-  meta.textContent = [session.site, session.floor ? `Planta ${session.floor}` : "", session.shift]
+  meta.textContent = [
+    session.time,
+    formatHours(session.durationMinutes),
+    session.site,
+    session.floor ? `Planta ${session.floor}` : "",
+    session.shift,
+  ]
     .filter(Boolean)
     .join(" · ");
   initial.textContent = teacherInitial(session.teacher);
@@ -1670,6 +1827,7 @@ function siteKey(value) {
 function renderEntityViews() {
   renderEntityList(elements.roomsList, groupBy(state.filteredRows, "room"), buildRoomEntity);
   renderEntityList(elements.teachersList, groupBy(state.filteredRows, "teacher"), buildTeacherEntity);
+  renderOccupancyView();
   renderEntityList(elements.subjectsList, groupBy(state.filteredRows, "subject"), buildSubjectEntity);
 }
 
@@ -1708,16 +1866,28 @@ function buildRoomEntity(name, rows) {
 function buildTeacherEntity(name, rows) {
   const days = unique(rows, "day").length;
   const rooms = unique(rows, "room").length;
+  const totalMinutes = sumDuration(rows);
+  const targetHours = getTeacherTargetHours(name);
+  const occupancy = occupancyPercent(totalMinutes, targetHours);
+  const labelSuffix = elements.dayFilter.value ? "en selección" : "semanales";
   return createEntityCard({
     title: name,
-    label: `${rows.length} clases totales`,
+    label: `${formatHours(totalMinutes)} ${labelSuffix}`,
+    metric: {
+      label: `Ocupación sobre ${formatTargetHours(targetHours)}`,
+      value: `${occupancy}%`,
+      percent: occupancy,
+    },
     chips: [
+      `${rows.length} clases`,
       formatUnique(rows, "site"),
       `${rooms} ${rooms === 1 ? "aula" : "aulas"}`,
       `${days} ${days === 1 ? "día" : "días"}`,
       formatUnique(rows, "shift"),
     ],
-    lines: topValues(rows, "subject", 4).map(([subject, count]) => `${subject} · ${count}`),
+    lines: subjectSummaries(rows, 6).map(
+      ({ name: subject, count, minutes }) => `${subject} · ${formatHours(minutes)} · ${count} clases`
+    ),
   });
 }
 
@@ -1730,7 +1900,7 @@ function buildSubjectEntity(name, rows) {
   });
 }
 
-function createEntityCard({ title, label, chips, lines }) {
+function createEntityCard({ title, label, chips, lines, metric = null }) {
   const article = document.createElement("article");
   article.className = "entity-card";
 
@@ -1740,6 +1910,8 @@ function createEntityCard({ title, label, chips, lines }) {
 
   const titleNode = document.createElement("h3");
   titleNode.textContent = title;
+
+  const metricNode = metric ? createMetricBlock(metric) : null;
 
   const chipWrap = document.createElement("div");
   chipWrap.className = "entity-meta";
@@ -1758,8 +1930,104 @@ function createEntityCard({ title, label, chips, lines }) {
     list.append(item);
   });
 
-  article.append(labelNode, titleNode, chipWrap, list);
+  article.append(labelNode, titleNode);
+  if (metricNode) article.append(metricNode);
+  article.append(chipWrap, list);
   return article;
+}
+
+function createMetricBlock(metric) {
+  const wrap = document.createElement("div");
+  wrap.className = "entity-metric";
+
+  const top = document.createElement("div");
+  const label = document.createElement("span");
+  label.textContent = metric.label;
+  const value = document.createElement("strong");
+  value.textContent = metric.value;
+  top.append(label, value);
+
+  const bar = document.createElement("div");
+  bar.className = "occupancy-bar";
+  const fill = document.createElement("span");
+  fill.style.width = `${Math.min(metric.percent, 100)}%`;
+  bar.append(fill);
+
+  wrap.append(top, bar);
+  return wrap;
+}
+
+function renderOccupancyView() {
+  elements.occupancyList.replaceChildren();
+  const groups = groupBy(state.filteredRows, "teacher");
+  if (!groups.size) {
+    const note = document.createElement("p");
+    note.className = "muted-note";
+    note.textContent = "No hay profesores con los filtros actuales.";
+    elements.occupancyList.append(note);
+    return;
+  }
+
+  [...groups.entries()]
+    .filter(([name]) => name !== "Sin indicar")
+    .sort((a, b) => a[0].localeCompare(b[0], "es"))
+    .forEach(([name, rows]) => elements.occupancyList.append(createOccupancyCard(name, rows)));
+}
+
+function createOccupancyCard(name, rows) {
+  const totalMinutes = sumDuration(rows);
+  const targetHours = getTeacherTargetHours(name);
+  const occupancy = occupancyPercent(totalMinutes, targetHours);
+  const article = document.createElement("article");
+  article.className = "occupancy-card";
+
+  const header = document.createElement("header");
+  const title = document.createElement("h3");
+  title.textContent = name;
+  const total = document.createElement("strong");
+  total.textContent = formatHours(totalMinutes);
+  header.append(title, total);
+
+  const control = document.createElement("label");
+  control.className = "target-control";
+  const label = document.createElement("span");
+  label.textContent = "Base h/semana";
+  const input = document.createElement("input");
+  input.type = "number";
+  input.min = "1";
+  input.max = "60";
+  input.step = "0.5";
+  input.value = String(targetHours);
+  input.addEventListener("change", () => updateTeacherTarget(name, input.value));
+  control.append(label, input);
+
+  const metric = createMetricBlock({
+    label: `Ocupación sobre ${formatTargetHours(targetHours)}`,
+    value: `${occupancy}%`,
+    percent: occupancy,
+  });
+
+  const list = document.createElement("div");
+  list.className = "entity-list";
+  subjectSummaries(rows, 5).forEach(({ name: subject, count, minutes }) => {
+    const item = document.createElement("span");
+    item.textContent = `${subject} · ${formatHours(minutes)} · ${count} clases`;
+    list.append(item);
+  });
+
+  article.append(header, control, metric, list);
+  return article;
+}
+
+function updateTeacherTarget(name, rawValue) {
+  const value = Number(rawValue);
+  if (!Number.isFinite(value) || value <= 0) {
+    delete state.teacherTargets[name];
+  } else {
+    state.teacherTargets[name] = value;
+  }
+  saveTeacherTargets();
+  render();
 }
 
 function formatUnique(rows, key, prefix = "") {
@@ -1768,6 +2036,44 @@ function formatUnique(rows, key, prefix = "") {
   const text = values.length <= 2 ? values.join(", ") : `${values.length} ${prefix || "valores"}`;
   if (prefix && values.length > 2) return text;
   return prefix && values.length <= 2 ? `${prefix}: ${text}` : text;
+}
+
+function sumDuration(rows) {
+  return rows.reduce((total, row) => total + (row.durationMinutes || defaultClassMinutes), 0);
+}
+
+function formatHours(minutes) {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (!hours) return `${rest} min`;
+  return rest ? `${hours} h ${rest} min` : `${hours} h`;
+}
+
+function getTeacherTargetHours(name) {
+  const configured = Number(state.teacherTargets[name]);
+  return Number.isFinite(configured) && configured > 0 ? configured : defaultWeeklyTargetHours;
+}
+
+function formatTargetHours(hours) {
+  return Number.isInteger(hours) ? `${hours} h` : `${hours.toString().replace(".", ",")} h`;
+}
+
+function occupancyPercent(minutes, targetHours) {
+  return Math.round((minutes / (targetHours * 60)) * 100);
+}
+
+function subjectSummaries(rows, limit) {
+  const groups = rows.reduce((map, row) => {
+    const name = row.subject || "Sin asignatura";
+    const current = map.get(name) || { name, count: 0, minutes: 0 };
+    current.count += 1;
+    current.minutes += row.durationMinutes || defaultClassMinutes;
+    map.set(name, current);
+    return map;
+  }, new Map());
+  return [...groups.values()]
+    .sort((a, b) => b.minutes - a.minutes || b.count - a.count || a.name.localeCompare(b.name, "es"))
+    .slice(0, limit);
 }
 
 function topValues(rows, key, limit) {
