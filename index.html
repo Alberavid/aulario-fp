@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aulario FP</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Planificador de aulas</p>
+        <h1>Aulario FP</h1>
+      </div>
+      <div class="file-actions">
+        <input id="csvInput" class="file-input" type="file" accept=".csv,text/csv" />
+        <label class="button primary" for="csvInput">Cargar CSV</label>
+        <button id="reloadDefault" class="button" type="button">CSV inicial</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="status-band">
+        <div>
+          <span class="label">Archivo</span>
+          <strong id="fileName">Sin datos</strong>
+        </div>
+        <div>
+          <span class="label">Última carga</span>
+          <strong id="loadTime">-</strong>
+        </div>
+        <div>
+          <span class="label">Registros válidos</span>
+          <strong id="rowCount">0</strong>
+        </div>
+      </section>
+
+      <section class="filters" aria-label="Filtros del aulario">
+        <label>
+          <span>Sede</span>
+          <select id="sedeFilter"></select>
+        </label>
+        <label>
+          <span>Día</span>
+          <select id="dayFilter"></select>
+        </label>
+        <label>
+          <span>Turno</span>
+          <select id="shiftFilter"></select>
+        </label>
+        <label>
+          <span>Aula</span>
+          <select id="roomFilter"></select>
+        </label>
+        <label>
+          <span>Profesor</span>
+          <select id="teacherFilter"></select>
+        </label>
+        <label>
+          <span>Asignatura</span>
+          <select id="subjectFilter"></select>
+        </label>
+        <label class="search-field">
+          <span>Buscar</span>
+          <input id="searchInput" type="search" placeholder="Aula, profesor, asignatura..." />
+        </label>
+        <button id="clearFilters" class="button compact" type="button">Limpiar</button>
+      </section>
+
+      <section class="kpis" aria-label="Resumen">
+        <article>
+          <span>Sesiones</span>
+          <strong id="kpiSessions">0</strong>
+        </article>
+        <article>
+          <span>Aulas</span>
+          <strong id="kpiRooms">0</strong>
+        </article>
+        <article>
+          <span>Profesores</span>
+          <strong id="kpiTeachers">0</strong>
+        </article>
+        <article>
+          <span>Asignaturas</span>
+          <strong id="kpiSubjects">0</strong>
+        </article>
+        <article>
+          <span>Sedes</span>
+          <strong id="kpiSites">0</strong>
+        </article>
+      </section>
+
+      <section class="view-switch" aria-label="Vistas">
+        <button class="tab active" data-view="schedule" type="button">Programación</button>
+        <button class="tab" data-view="rooms" type="button">Aulas</button>
+        <button class="tab" data-view="teachers" type="button">Profesores</button>
+        <button class="tab" data-view="subjects" type="button">Asignaturas</button>
+      </section>
+
+      <section id="emptyState" class="empty-state" hidden>
+        <h2>Carga un CSV para ver el aulario</h2>
+      </section>
+
+      <section id="scheduleView" class="view">
+        <div class="schedule-wrap">
+          <table class="schedule-table">
+            <thead id="scheduleHead"></thead>
+            <tbody id="scheduleBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="roomsView" class="view list-view" hidden>
+        <div id="roomsList" class="entity-grid"></div>
+      </section>
+
+      <section id="teachersView" class="view list-view" hidden>
+        <div id="teachersList" class="entity-grid"></div>
+      </section>
+
+      <section id="subjectsView" class="view list-view" hidden>
+        <div id="subjectsList" class="entity-grid"></div>
+      </section>
+    </main>
+
+    <template id="sessionTemplate">
+      <article class="session">
+        <div class="session-head">
+          <strong class="session-room"></strong>
+          <span class="session-site"></span>
+        </div>
+        <p class="session-subject"></p>
+        <p class="session-meta"></p>
+        <p class="session-teacher"></p>
+      </article>
+    </template>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
