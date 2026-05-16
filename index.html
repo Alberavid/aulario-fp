@@ -293,6 +293,10 @@ main {
   box-shadow: var(--shadow);
 }
 
+.mobile-schedule {
+  display: none;
+}
+
 .schedule-table {
   width: 1180px;
   min-width: 1180px;
@@ -599,13 +603,32 @@ main {
 }
 
 @media (max-width: 760px) {
+  body {
+    background: #f5f7fb;
+  }
+
   .topbar {
     grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 18px 16px;
   }
 
   .brand-mark {
-    width: 50px;
-    height: 50px;
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+  }
+
+  h1 {
+    font-size: 1.28rem;
+  }
+
+  .eyebrow {
+    font-size: 0.68rem;
+  }
+
+  main {
+    padding: 16px 12px 36px;
   }
 
   .file-actions {
@@ -624,8 +647,148 @@ main {
   }
 
   .filters {
-    padding: 24px;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .filters select,
+  .filters input {
+    min-height: 48px;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    padding-inline: 16px;
+  }
+
+  .status-band,
+  .kpis {
+    border-radius: 18px;
+  }
+
+  .status-band > div,
+  .kpis article {
+    padding: 13px 16px;
+  }
+
+  .view-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .tab {
+    min-height: 42px;
+    padding-inline: 10px;
+    font-size: 0.76rem;
+  }
+
+  .schedule-wrap {
+    display: none;
+  }
+
+  .mobile-schedule {
+    display: grid;
+    gap: 18px;
+  }
+
+  .mobile-day-section {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-day-title {
+    border-radius: 18px;
+    background: #eef1fb;
+    color: var(--violet);
+    font-size: 0.95rem;
+    font-weight: 950;
+    padding: 14px 18px;
+    text-transform: uppercase;
+  }
+
+  .mobile-room {
+    overflow: hidden;
+    border: 1px solid var(--line);
     border-radius: 24px;
+    background: #fff;
+    box-shadow: var(--soft-shadow);
+  }
+
+  .mobile-room-head {
+    display: grid;
+    gap: 6px;
+    border-left: 6px solid var(--room-color);
+    padding: 18px 18px 14px;
+  }
+
+  .mobile-room-head strong {
+    color: #334155;
+    font-size: 1.35rem;
+    font-style: italic;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+
+  .mobile-room-head span {
+    color: #8c87ff;
+    font-size: 0.78rem;
+    font-style: italic;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+
+  .mobile-session-list {
+    display: grid;
+    gap: 12px;
+    padding: 0 12px 14px;
+  }
+
+  .mobile-session {
+    display: grid;
+    gap: 12px;
+    border-radius: 22px;
+    background: var(--session-color);
+    box-shadow: 0 12px 22px color-mix(in srgb, var(--session-color) 24%, transparent);
+    color: #fff;
+    padding: 16px;
+  }
+
+  .mobile-session-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .mobile-session-top span {
+    min-width: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #eef2ff;
+    font-size: 0.75rem;
+    font-weight: 950;
+    padding: 5px 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .mobile-session strong {
+    color: #fff;
+    font-size: 1rem;
+    font-style: italic;
+    font-weight: 950;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-transform: uppercase;
+  }
+
+  .mobile-session p {
+    color: #eef2ff;
+    font-size: 0.88rem;
+    font-weight: 900;
+    overflow-wrap: anywhere;
   }
 
   .schedule-table {
@@ -808,6 +971,7 @@ const elements = {
   clearFilters: document.querySelector("#clearFilters"),
   emptyState: document.querySelector("#emptyState"),
   scheduleTable: document.querySelector(".schedule-table"),
+  mobileSchedule: document.querySelector("#mobileSchedule") || createMobileScheduleContainer(),
   scheduleHead: document.querySelector("#scheduleHead"),
   scheduleBody: document.querySelector("#scheduleBody"),
   scheduleView: document.querySelector("#scheduleView"),
@@ -1245,6 +1409,7 @@ function renderSchedule() {
     .sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
   sizeScheduleTable(times.length);
   renderScheduleHead(times);
+  renderMobileSchedule(rows, visibleDays);
 
   if (!times.length) {
     const tr = document.createElement("tr");
@@ -1297,6 +1462,95 @@ function renderSchedule() {
       elements.scheduleBody.append(tr);
     });
   });
+}
+
+function createMobileScheduleContainer() {
+  const container = document.createElement("div");
+  container.id = "mobileSchedule";
+  container.className = "mobile-schedule";
+  const scheduleView = document.querySelector("#scheduleView");
+  const scheduleWrap = document.querySelector(".schedule-wrap");
+  if (scheduleView && scheduleWrap) scheduleWrap.after(container);
+  return container;
+}
+
+function renderMobileSchedule(rows, visibleDays) {
+  elements.mobileSchedule.replaceChildren();
+
+  if (!rows.length) {
+    const note = document.createElement("p");
+    note.className = "muted-note";
+    note.textContent = "No hay sesiones con los filtros actuales.";
+    elements.mobileSchedule.append(note);
+    return;
+  }
+
+  visibleDays.forEach((day) => {
+    const dayRows = rows.filter((row) => row.day === day);
+    if (!dayRows.length) return;
+
+    const section = document.createElement("section");
+    section.className = "mobile-day-section";
+
+    const title = document.createElement("h2");
+    title.className = "mobile-day-title";
+    title.textContent = day;
+    section.append(title);
+
+    unique(dayRows, "room").forEach((roomName) => {
+      const roomRows = dayRows.filter((row) => row.room === roomName).sort(sortSessions);
+      const roomBlock = document.createElement("article");
+      roomBlock.className = "mobile-room";
+      roomBlock.style.setProperty("--room-color", colorForRoom(roomName));
+
+      const header = document.createElement("header");
+      header.className = "mobile-room-head";
+      const room = document.createElement("strong");
+      room.textContent = roomName;
+      const meta = document.createElement("span");
+      meta.textContent = [
+        `Sede: ${unique(roomRows, "site").join(", ") || "Sin indicar"}`,
+        unique(roomRows, "floor").length ? `Planta ${unique(roomRows, "floor").join(", ")}` : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      header.append(room, meta);
+
+      const sessions = document.createElement("div");
+      sessions.className = "mobile-session-list";
+      roomRows.forEach((session) => sessions.append(createMobileSessionCard(session)));
+
+      roomBlock.append(header, sessions);
+      section.append(roomBlock);
+    });
+
+    elements.mobileSchedule.append(section);
+  });
+}
+
+function createMobileSessionCard(session) {
+  const card = document.createElement("article");
+  card.className = "mobile-session";
+  card.style.setProperty("--session-color", colorForSubject(session.subject));
+
+  const top = document.createElement("div");
+  top.className = "mobile-session-top";
+  const time = document.createElement("span");
+  time.textContent = session.time;
+  const cycle = document.createElement("span");
+  cycle.textContent = [session.cycle, session.course, session.group ? `Grupo ${session.group}` : ""]
+    .filter(Boolean)
+    .join(" · ");
+  top.append(time, cycle);
+
+  const subject = document.createElement("strong");
+  subject.textContent = session.subject || "Sin asignatura";
+
+  const teacher = document.createElement("p");
+  teacher.textContent = session.teacher || "Profesor sin indicar";
+
+  card.append(top, subject, teacher);
+  return card;
 }
 
 function sizeScheduleTable(timeCount) {
