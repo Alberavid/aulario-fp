@@ -1706,10 +1706,17 @@ function buildRoomEntity(name, rows) {
 }
 
 function buildTeacherEntity(name, rows) {
+  const days = unique(rows, "day").length;
+  const rooms = unique(rows, "room").length;
   return createEntityCard({
     title: name,
-    label: `${rows.length} sesiones`,
-    chips: [formatUnique(rows, "site"), formatUnique(rows, "room", "Aulas"), formatUnique(rows, "shift")],
+    label: `${rows.length} clases totales`,
+    chips: [
+      formatUnique(rows, "site"),
+      `${rooms} ${rooms === 1 ? "aula" : "aulas"}`,
+      `${days} ${days === 1 ? "día" : "días"}`,
+      formatUnique(rows, "shift"),
+    ],
     lines: topValues(rows, "subject", 4).map(([subject, count]) => `${subject} · ${count}`),
   });
 }
