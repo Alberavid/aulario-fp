@@ -551,6 +551,118 @@ body.is-mobile-layout .mobile-schedule {
   gap: 14px;
 }
 
+.availability-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.availability-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: var(--soft-shadow);
+  padding: 18px;
+}
+
+.availability-controls span {
+  display: block;
+  color: #9aa7ba;
+  font-size: 0.74rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.availability-controls select {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 8px;
+  border: 1px solid #e2e8f2;
+  border-radius: 14px;
+  background: #f8faff;
+  color: #334155;
+  font-weight: 950;
+  padding: 0 12px;
+}
+
+.availability-result {
+  display: grid;
+  gap: 14px;
+}
+
+.availability-summary {
+  border-radius: 24px;
+  background: var(--navy);
+  color: #fff;
+  padding: 22px;
+}
+
+.availability-summary h3 {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.availability-summary p {
+  margin-top: 8px;
+  color: #b9c3d6;
+  font-weight: 850;
+}
+
+.room-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.room-chip-list span {
+  border-radius: 999px;
+  background: #eef2ff;
+  color: var(--violet);
+  font-weight: 950;
+  padding: 9px 13px;
+}
+
+.availability-subtitle {
+  color: #334155;
+  font-size: 1rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.busy-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.busy-list article {
+  display: grid;
+  gap: 5px;
+  border-left: 6px solid var(--session-color);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--soft-shadow);
+  padding: 14px;
+}
+
+.busy-list strong {
+  color: #334155;
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.busy-list span {
+  color: #526174;
+  font-weight: 900;
+}
+
+.busy-list small {
+  color: #7b879a;
+  font-weight: 800;
+}
+
 .entity-card {
   display: grid;
   gap: 12px;
@@ -795,6 +907,15 @@ body.is-mobile-layout .mobile-schedule {
     grid-template-columns: 1fr;
   }
 
+  .availability-controls,
+  .busy-list {
+    grid-template-columns: 1fr;
+  }
+
+  .availability-summary h3 {
+    font-size: 1.45rem;
+  }
+
   .occupancy-card {
     border-radius: 20px;
     padding: 16px;
@@ -1023,9 +1144,10 @@ body.is-mobile-layout .mobile-schedule {
 
       <section class="view-switch" aria-label="Vistas">
         <button class="tab active" data-view="schedule" type="button">Programación</button>
+        <button class="tab priority-tab" data-view="occupancy" type="button">Ocupación profesores</button>
+        <button class="tab" data-view="availability" type="button">Aulas libres</button>
         <button class="tab" data-view="rooms" type="button">Aulas</button>
         <button class="tab" data-view="teachers" type="button">Profesores</button>
-        <button class="tab" data-view="occupancy" type="button">Ocupación</button>
         <button class="tab" data-view="subjects" type="button">Asignaturas</button>
       </section>
 
@@ -1053,6 +1175,26 @@ body.is-mobile-layout .mobile-schedule {
 
       <section id="occupancyView" class="view list-view" hidden>
         <div id="occupancyList" class="occupancy-grid"></div>
+      </section>
+
+      <section id="availabilityView" class="view list-view" hidden>
+        <div class="availability-panel">
+          <div class="availability-controls">
+            <label>
+              <span>Día</span>
+              <select id="freeDaySelect"></select>
+            </label>
+            <label>
+              <span>Hora</span>
+              <select id="freeTimeSelect"></select>
+            </label>
+            <label>
+              <span>Sede</span>
+              <select id="freeSiteSelect"></select>
+            </label>
+          </div>
+          <div id="availabilityResult" class="availability-result"></div>
+        </div>
       </section>
 
       <section id="subjectsView" class="view list-view" hidden>
@@ -1117,10 +1259,15 @@ const elements = {
   roomsView: document.querySelector("#roomsView"),
   teachersView: document.querySelector("#teachersView"),
   occupancyView: document.querySelector("#occupancyView"),
+  availabilityView: document.querySelector("#availabilityView"),
   subjectsView: document.querySelector("#subjectsView"),
   roomsList: document.querySelector("#roomsList"),
   teachersList: document.querySelector("#teachersList"),
   occupancyList: document.querySelector("#occupancyList"),
+  availabilityResult: document.querySelector("#availabilityResult"),
+  freeDaySelect: document.querySelector("#freeDaySelect"),
+  freeTimeSelect: document.querySelector("#freeTimeSelect"),
+  freeSiteSelect: document.querySelector("#freeSiteSelect"),
   subjectsList: document.querySelector("#subjectsList"),
   kpiSessions: document.querySelector("#kpiSessions"),
   kpiRooms: document.querySelector("#kpiRooms"),
@@ -1163,6 +1310,9 @@ elements.reloadDefault.addEventListener("click", loadBundledCsv);
 elements.clearFilters.addEventListener("click", clearFilters);
 elements.searchInput.addEventListener("input", render);
 filterControls.forEach((control) => control.addEventListener("change", render));
+[elements.freeDaySelect, elements.freeTimeSelect, elements.freeSiteSelect].forEach((control) => {
+  control.addEventListener("change", renderAvailabilityView);
+});
 elements.tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     state.activeView = tab.dataset.view;
@@ -1474,6 +1624,13 @@ function resetFilterOptions() {
   fillSelect(elements.roomFilter, "Todas", unique(state.allRows, "room"));
   fillSelect(elements.teacherFilter, "Todos", unique(state.allRows, "teacher"));
   fillSelect(elements.subjectFilter, "Todas", unique(state.allRows, "subject"));
+  fillSelect(elements.freeDaySelect, "Selecciona día", dayOrder.filter((day) => state.allRows.some((row) => row.day === day)));
+  fillSelect(
+    elements.freeTimeSelect,
+    "Selecciona hora",
+    [...new Set(state.allRows.map((row) => row.time).filter(Boolean))].sort((a, b) => timeToMinutes(a) - timeToMinutes(b))
+  );
+  fillSelect(elements.freeSiteSelect, "Todas las sedes", unique(state.allRows, "site"));
   elements.searchInput.value = "";
 }
 
@@ -1497,6 +1654,7 @@ function render() {
   elements.roomsView.hidden = !hasRows || state.activeView !== "rooms";
   elements.teachersView.hidden = !hasRows || state.activeView !== "teachers";
   elements.occupancyView.hidden = !hasRows || state.activeView !== "occupancy";
+  elements.availabilityView.hidden = !hasRows || state.activeView !== "availability";
   elements.subjectsView.hidden = !hasRows || state.activeView !== "subjects";
   updateTabs();
   renderKpis();
@@ -1828,6 +1986,7 @@ function renderEntityViews() {
   renderEntityList(elements.roomsList, groupBy(state.filteredRows, "room"), buildRoomEntity);
   renderEntityList(elements.teachersList, groupBy(state.filteredRows, "teacher"), buildTeacherEntity);
   renderOccupancyView();
+  renderAvailabilityView();
   renderEntityList(elements.subjectsList, groupBy(state.filteredRows, "subject"), buildSubjectEntity);
 }
 
@@ -1855,11 +2014,24 @@ function renderEntityList(container, groups, builder) {
 }
 
 function buildRoomEntity(name, rows) {
+  const capacity = roomCapacitySlots(name, rows);
+  const occupied = roomOccupiedSlots(rows);
+  const percent = capacity ? Math.round((occupied / capacity) * 100) : 0;
   return createEntityCard({
     title: name,
-    label: `${rows.length} sesiones`,
-    chips: [formatUnique(rows, "site"), formatUnique(rows, "floor", "Planta"), formatUnique(rows, "shift")],
-    lines: topValues(rows, "teacher", 4).map(([teacher, count]) => `${teacher} · ${count}`),
+    label: `${percent}% de ocupación`,
+    metric: {
+      label: `${occupied} de ${capacity} franjas`,
+      value: `${percent}%`,
+      percent,
+    },
+    chips: [
+      `${rows.length} clases`,
+      formatUnique(rows, "site"),
+      formatUnique(rows, "floor", "Planta"),
+      formatUnique(rows, "shift"),
+    ],
+    lines: topValues(rows, "teacher", 4).map(([teacher, count]) => `${teacher} · ${count} clases`),
   });
 }
 
@@ -2028,6 +2200,73 @@ function updateTeacherTarget(name, rawValue) {
   }
   saveTeacherTargets();
   render();
+}
+
+function renderAvailabilityView() {
+  elements.availabilityResult.replaceChildren();
+  if (!state.allRows.length) return;
+
+  const day = elements.freeDaySelect.value || elements.dayFilter.value || dayOrder[0];
+  const time =
+    elements.freeTimeSelect.value ||
+    [...new Set(state.allRows.map((row) => row.time).filter(Boolean))].sort((a, b) => timeToMinutes(a) - timeToMinutes(b))[0];
+  const site = elements.freeSiteSelect.value || elements.sedeFilter.value;
+
+  if (!elements.freeDaySelect.value) elements.freeDaySelect.value = day;
+  if (!elements.freeTimeSelect.value) elements.freeTimeSelect.value = time;
+  if (site && !elements.freeSiteSelect.value) elements.freeSiteSelect.value = site;
+
+  const rooms = roomsForSite(site);
+  const busyRows = state.allRows.filter((row) => row.day === day && row.time === time && (!site || row.site === site));
+  const busyRooms = new Set(busyRows.map((row) => row.room));
+  const freeRooms = rooms.filter((room) => !busyRooms.has(room));
+
+  const summary = document.createElement("article");
+  summary.className = "availability-summary";
+  const title = document.createElement("h3");
+  title.textContent = `${freeRooms.length} aulas libres`;
+  const meta = document.createElement("p");
+  meta.textContent = `${day} · ${time}${site ? ` · ${site}` : " · Todas las sedes"}`;
+  summary.append(title, meta);
+
+  const freeList = document.createElement("div");
+  freeList.className = "room-chip-list";
+  freeRooms.forEach((room) => {
+    const chip = document.createElement("span");
+    chip.textContent = room;
+    freeList.append(chip);
+  });
+
+  const busyTitle = document.createElement("h3");
+  busyTitle.className = "availability-subtitle";
+  busyTitle.textContent = `${busyRooms.size} aulas ocupadas`;
+
+  const busyList = document.createElement("div");
+  busyList.className = "busy-list";
+  busyRows
+    .sort(sortSessions)
+    .forEach((row) => {
+      const item = document.createElement("article");
+      item.style.setProperty("--session-color", colorForSubject(row.subject));
+      item.innerHTML = `<strong>${escapeHtml(row.room)}</strong><span>${escapeHtml(row.subject || "Sin asignatura")}</span><small>${escapeHtml(row.teacher || "Profesor sin indicar")}</small>`;
+      busyList.append(item);
+    });
+
+  elements.availabilityResult.append(summary, freeList, busyTitle, busyList);
+}
+
+function roomsForSite(site) {
+  return unique(state.allRows.filter((row) => !site || row.site === site), "room").filter((room) => room !== "Sin aula");
+}
+
+function roomOccupiedSlots(rows) {
+  return new Set(rows.map((row) => `${row.day}|${row.time}`)).size;
+}
+
+function roomCapacitySlots(roomName, rows) {
+  const site = rows.find((row) => row.room === roomName)?.site;
+  const siteRows = state.allRows.filter((row) => !site || row.site === site);
+  return new Set(siteRows.map((row) => `${row.day}|${row.time}`)).size;
 }
 
 function formatUnique(rows, key, prefix = "") {
