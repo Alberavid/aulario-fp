@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Aulario FP</title>
+    <title>Aulario FP Profesores</title>
     <style>
 :root {
   --bg: #f5f7fb;
@@ -1096,13 +1096,13 @@ body.is-mobile-layout .mobile-schedule {
 
     </style>
   </head>
-  <body>
+  <body data-role="teacher">
     <header class="topbar">
       <div class="brand-mark" aria-hidden="true">
         <span>▣</span>
       </div>
       <div class="brand-copy">
-        <h1>Aulario FP <em>Euroformac</em></h1>
+        <h1>Aulario FP <em>Profesores</em></h1>
         <p class="eyebrow">Consultado el: <span id="consultedAt">-</span></p>
       </div>
       <div class="file-actions">
@@ -1191,9 +1191,7 @@ body.is-mobile-layout .mobile-schedule {
         <button class="tab active" data-view="schedule" type="button">Programación</button>
         <button class="tab" data-view="subjects" type="button">Asignaturas</button>
         <button class="tab" data-view="teachers" type="button">Profesores</button>
-        <button class="tab priority-tab" data-view="occupancy" type="button">Ocupación profesores</button>
         <button class="tab" data-view="rooms" type="button">Aulas</button>
-        <button class="tab" data-view="availability" type="button">Aulas libres</button>
       </section>
 
       <section id="emptyState" class="empty-state" hidden>
@@ -1268,6 +1266,9 @@ const targetStorageKey = "aulario-fp-teacher-target-hours-v1";
 const defaultClassMinutes = 55;
 const defaultWeeklyTargetHours = 25;
 const sixtyMinuteSlots = new Set(["16:00", "17:00", "18:00", "19:00", "20:00"]);
+const appRole = document.body.dataset.role || "staff";
+const isTeacherPortal = appRole === "teacher";
+const teacherAllowedViews = new Set(["schedule", "subjects", "teachers", "rooms"]);
 const state = {
   allRows: [],
   filteredRows: [],
@@ -1360,6 +1361,7 @@ filterControls.forEach((control) => control.addEventListener("change", render));
 });
 elements.tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
+    if (isTeacherPortal && !teacherAllowedViews.has(tab.dataset.view)) return;
     state.activeView = tab.dataset.view;
     render();
   });
@@ -1695,13 +1697,14 @@ function render() {
   updateChrome();
   state.filteredRows = getFilteredRows();
   const hasRows = state.allRows.length > 0;
+  if (isTeacherPortal && !teacherAllowedViews.has(state.activeView)) state.activeView = "schedule";
   updateResponsiveMode();
   elements.emptyState.hidden = hasRows;
   elements.scheduleView.hidden = !hasRows || state.activeView !== "schedule";
   elements.roomsView.hidden = !hasRows || state.activeView !== "rooms";
   elements.teachersView.hidden = !hasRows || state.activeView !== "teachers";
-  elements.occupancyView.hidden = !hasRows || state.activeView !== "occupancy";
-  elements.availabilityView.hidden = !hasRows || state.activeView !== "availability";
+  elements.occupancyView.hidden = isTeacherPortal || !hasRows || state.activeView !== "occupancy";
+  elements.availabilityView.hidden = isTeacherPortal || !hasRows || state.activeView !== "availability";
   elements.subjectsView.hidden = !hasRows || state.activeView !== "subjects";
   updateTabs();
   renderKpis();
@@ -1760,6 +1763,7 @@ function filterMatch(value, selected) {
 
 function updateTabs() {
   elements.tabs.forEach((tab) => {
+    tab.hidden = isTeacherPortal && !teacherAllowedViews.has(tab.dataset.view);
     tab.classList.toggle("active", tab.dataset.view === state.activeView);
   });
 }
@@ -2032,8 +2036,10 @@ function siteKey(value) {
 function renderEntityViews() {
   renderEntityList(elements.roomsList, groupBy(state.filteredRows, "room"), buildRoomEntity);
   renderEntityList(elements.teachersList, groupBy(state.filteredRows, "teacher"), buildTeacherEntity);
-  renderOccupancyView();
-  renderAvailabilityView();
+  if (!isTeacherPortal) {
+    renderOccupancyView();
+    renderAvailabilityView();
+  }
   renderEntityList(elements.subjectsList, groupBy(state.filteredRows, "subject"), buildSubjectEntity);
 }
 
@@ -2061,6 +2067,15 @@ function renderEntityList(container, groups, builder) {
 }
 
 function buildRoomEntity(name, rows) {
+  if (isTeacherPortal) {
+    return createEntityCard({
+      title: name,
+      label: `${rows.length} clases registradas`,
+      chips: [formatUnique(rows, "site"), formatUnique(rows, "floor", "Planta"), formatUnique(rows, "shift")],
+      lines: topValues(rows, "teacher", 4).map(([teacher, count]) => `${teacher} · ${count} clases`),
+    });
+  }
+
   const capacity = roomCapacitySlots(name, rows);
   const occupied = roomOccupiedSlots(rows);
   const percent = capacity ? Math.round((occupied / capacity) * 100) : 0;
@@ -2085,6 +2100,20 @@ function buildRoomEntity(name, rows) {
 function buildTeacherEntity(name, rows) {
   const days = unique(rows, "day").length;
   const rooms = unique(rows, "room").length;
+  if (isTeacherPortal) {
+    return createEntityCard({
+      title: name,
+      label: `${rows.length} clases registradas`,
+      chips: [
+        formatUnique(rows, "site"),
+        `${rooms} ${rooms === 1 ? "aula" : "aulas"}`,
+        `${days} ${days === 1 ? "día" : "días"}`,
+        formatUnique(rows, "shift"),
+      ],
+      lines: topValues(rows, "subject", 6).map(([subject, count]) => `${subject} · ${count} clases`),
+    });
+  }
+
   const totalMinutes = sumDuration(rows);
   const targetHours = getTeacherTargetHours(name);
   const occupancy = occupancyPercent(totalMinutes, targetHours);
