@@ -610,6 +610,16 @@ body.is-mobile-layout .mobile-schedule {
   font-weight: 850;
 }
 
+.availability-summary .availability-answer {
+  margin-top: 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.35;
+  padding: 12px 14px;
+}
+
 .room-chip-list {
   display: flex;
   flex-wrap: wrap;
@@ -635,6 +645,40 @@ body.is-mobile-layout .mobile-schedule {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 12px;
+}
+
+.free-room-hours-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.free-room-hours-list article {
+  display: grid;
+  gap: 8px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--soft-shadow);
+  padding: 16px;
+}
+
+.free-room-hours-list strong {
+  color: #334155;
+  font-size: 1.08rem;
+  font-weight: 950;
+}
+
+.free-room-hours-list span {
+  color: #8c87ff;
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.free-room-hours-list p {
+  color: #526174;
+  font-weight: 900;
+  line-height: 1.35;
 }
 
 .busy-list article {
@@ -908,7 +952,8 @@ body.is-mobile-layout .mobile-schedule {
   }
 
   .availability-controls,
-  .busy-list {
+  .busy-list,
+  .free-room-hours-list {
     grid-template-columns: 1fr;
   }
 
@@ -1144,11 +1189,11 @@ body.is-mobile-layout .mobile-schedule {
 
       <section class="view-switch" aria-label="Vistas">
         <button class="tab active" data-view="schedule" type="button">Programación</button>
-        <button class="tab priority-tab" data-view="occupancy" type="button">Ocupación profesores</button>
-        <button class="tab" data-view="availability" type="button">Aulas libres</button>
-        <button class="tab" data-view="rooms" type="button">Aulas</button>
-        <button class="tab" data-view="teachers" type="button">Profesores</button>
         <button class="tab" data-view="subjects" type="button">Asignaturas</button>
+        <button class="tab" data-view="teachers" type="button">Profesores</button>
+        <button class="tab priority-tab" data-view="occupancy" type="button">Ocupación profesores</button>
+        <button class="tab" data-view="rooms" type="button">Aulas</button>
+        <button class="tab" data-view="availability" type="button">Aulas libres</button>
       </section>
 
       <section id="emptyState" class="empty-state" hidden>
@@ -1625,11 +1670,13 @@ function resetFilterOptions() {
   fillSelect(elements.teacherFilter, "Todos", unique(state.allRows, "teacher"));
   fillSelect(elements.subjectFilter, "Todas", unique(state.allRows, "subject"));
   fillSelect(elements.freeDaySelect, "Selecciona día", dayOrder.filter((day) => state.allRows.some((row) => row.day === day)));
+  elements.freeDaySelect.insertBefore(new Option("Todos los días", "__all__"), elements.freeDaySelect.options[1] || null);
   fillSelect(
     elements.freeTimeSelect,
     "Selecciona hora",
     [...new Set(state.allRows.map((row) => row.time).filter(Boolean))].sort((a, b) => timeToMinutes(a) - timeToMinutes(b))
   );
+  elements.freeTimeSelect.insertBefore(new Option("Todas las horas", "__all__"), elements.freeTimeSelect.options[1] || null);
   fillSelect(elements.freeSiteSelect, "Todas las sedes", unique(state.allRows, "site"));
   elements.searchInput.value = "";
 }
@@ -2216,10 +2263,20 @@ function renderAvailabilityView() {
   if (!elements.freeTimeSelect.value) elements.freeTimeSelect.value = time;
   if (site && !elements.freeSiteSelect.value) elements.freeSiteSelect.value = site;
 
-  const rooms = roomsForSite(site);
+  const rooms = roomOptionsForSite(site);
+  if (day === "__all__") {
+    renderAllDaysAvailability({ time, site, rooms });
+    return;
+  }
+
+  if (time === "__all__") {
+    renderAllDayAvailability({ day, site, rooms });
+    return;
+  }
+
   const busyRows = state.allRows.filter((row) => row.day === day && row.time === time && (!site || row.site === site));
-  const busyRooms = new Set(busyRows.map((row) => row.room));
-  const freeRooms = rooms.filter((room) => !busyRooms.has(room));
+  const busyRooms = new Set(busyRows.map(roomAvailabilityKey));
+  const freeRooms = rooms.filter((room) => !busyRooms.has(room.key));
 
   const summary = document.createElement("article");
   summary.className = "availability-summary";
@@ -2227,13 +2284,18 @@ function renderAvailabilityView() {
   title.textContent = `${freeRooms.length} aulas libres`;
   const meta = document.createElement("p");
   meta.textContent = `${day} · ${time}${site ? ` · ${site}` : " · Todas las sedes"}`;
-  summary.append(title, meta);
+  const answer = document.createElement("p");
+  answer.className = "availability-answer";
+  answer.textContent = freeRooms.length
+    ? `Aulas libres: ${freeRooms.map((room) => formatRoomOption(room, site)).join(", ")}`
+    : "No hay aulas libres en esa franja.";
+  summary.append(title, meta, answer);
 
   const freeList = document.createElement("div");
   freeList.className = "room-chip-list";
   freeRooms.forEach((room) => {
     const chip = document.createElement("span");
-    chip.textContent = room;
+    chip.textContent = formatRoomOption(room, site);
     freeList.append(chip);
   });
 
@@ -2255,8 +2317,166 @@ function renderAvailabilityView() {
   elements.availabilityResult.append(summary, freeList, busyTitle, busyList);
 }
 
-function roomsForSite(site) {
-  return unique(state.allRows.filter((row) => !site || row.site === site), "room").filter((room) => room !== "Sin aula");
+function renderAllDayAvailability({ day, site, rooms }) {
+  const times = [...new Set(state.allRows.filter((row) => row.day === day && (!site || row.site === site)).map((row) => row.time))]
+    .sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
+  const freeByRoom = rooms
+    .map((room) => {
+      const freeTimes = times.filter((time) => {
+        return !state.allRows.some(
+          (row) => row.day === day && row.time === time && row.site === room.site && row.room === room.room
+        );
+      });
+      return { ...room, freeTimes };
+    })
+    .filter((room) => room.freeTimes.length);
+
+  const summary = document.createElement("article");
+  summary.className = "availability-summary";
+  const title = document.createElement("h3");
+  title.textContent = `${freeByRoom.length} aulas con huecos libres`;
+  const meta = document.createElement("p");
+  meta.textContent = `${day} · Todas las horas${site ? ` · ${site}` : " · Todas las sedes"}`;
+  const answer = document.createElement("p");
+  answer.className = "availability-answer";
+  answer.textContent = freeByRoom.length
+    ? `Aulas con horas libres: ${freeByRoom.map((room) => formatRoomOption(room, site)).join(", ")}`
+    : "No hay aulas libres en ese día.";
+  summary.append(title, meta, answer);
+
+  const list = document.createElement("div");
+  list.className = "free-room-hours-list";
+  freeByRoom.forEach((room) => {
+    const card = document.createElement("article");
+    const title = document.createElement("strong");
+    title.textContent = formatRoomOption(room, site);
+    const meta = document.createElement("span");
+    meta.textContent = room.floor ? `Planta ${room.floor}` : "Planta sin indicar";
+    const hours = document.createElement("p");
+    hours.textContent = `Horas libres: ${room.freeTimes.join(", ")}`;
+    card.append(title, meta, hours);
+    list.append(card);
+  });
+
+  elements.availabilityResult.append(summary, list);
+}
+
+function renderAllDaysAvailability({ time, site, rooms }) {
+  if (time === "__all__") {
+    renderFullWeekAvailability({ site, rooms });
+    return;
+  }
+
+  const freeByRoom = rooms
+    .map((room) => {
+      const freeDays = dayOrder.filter((day) => {
+        return !state.allRows.some(
+          (row) => row.day === day && row.time === time && row.site === room.site && row.room === room.room
+        );
+      });
+      return { ...room, freeDays };
+    })
+    .filter((room) => room.freeDays.length);
+
+  const summary = document.createElement("article");
+  summary.className = "availability-summary";
+  const title = document.createElement("h3");
+  title.textContent = `${freeByRoom.length} aulas con días libres`;
+  const meta = document.createElement("p");
+  meta.textContent = `Todos los días · ${time}${site ? ` · ${site}` : " · Todas las sedes"}`;
+  const answer = document.createElement("p");
+  answer.className = "availability-answer";
+  answer.textContent = freeByRoom.length
+    ? `Aulas con días libres: ${freeByRoom.map((room) => formatRoomOption(room, site)).join(", ")}`
+    : "No hay aulas libres para esa hora.";
+  summary.append(title, meta, answer);
+
+  const list = document.createElement("div");
+  list.className = "free-room-hours-list";
+  freeByRoom.forEach((room) => {
+    const card = document.createElement("article");
+    const title = document.createElement("strong");
+    title.textContent = formatRoomOption(room, site);
+    const meta = document.createElement("span");
+    meta.textContent = room.floor ? `Planta ${room.floor}` : "Planta sin indicar";
+    const days = document.createElement("p");
+    days.textContent = `Días libres a las ${time}: ${room.freeDays.join(", ")}`;
+    card.append(title, meta, days);
+    list.append(card);
+  });
+
+  elements.availabilityResult.append(summary, list);
+}
+
+function renderFullWeekAvailability({ site, rooms }) {
+  const freeByRoom = rooms
+    .map((room) => {
+      const freeSlots = dayOrder.flatMap((day) => {
+        const times = [...new Set(state.allRows.filter((row) => row.day === day && row.site === room.site).map((row) => row.time))]
+          .sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
+        return times
+          .filter((time) => {
+            return !state.allRows.some(
+              (row) => row.day === day && row.time === time && row.site === room.site && row.room === room.room
+            );
+          })
+          .map((time) => `${day} ${time}`);
+      });
+      return { ...room, freeSlots };
+    })
+    .filter((room) => room.freeSlots.length);
+
+  const summary = document.createElement("article");
+  summary.className = "availability-summary";
+  const title = document.createElement("h3");
+  title.textContent = `${freeByRoom.length} aulas con huecos libres`;
+  const meta = document.createElement("p");
+  meta.textContent = `Todos los días · Todas las horas${site ? ` · ${site}` : " · Todas las sedes"}`;
+  const answer = document.createElement("p");
+  answer.className = "availability-answer";
+  answer.textContent = freeByRoom.length
+    ? `Aulas con huecos libres: ${freeByRoom.map((room) => formatRoomOption(room, site)).join(", ")}`
+    : "No hay huecos libres.";
+  summary.append(title, meta, answer);
+
+  const list = document.createElement("div");
+  list.className = "free-room-hours-list";
+  freeByRoom.forEach((room) => {
+    const card = document.createElement("article");
+    const title = document.createElement("strong");
+    title.textContent = formatRoomOption(room, site);
+    const meta = document.createElement("span");
+    meta.textContent = room.floor ? `Planta ${room.floor}` : "Planta sin indicar";
+    const slots = document.createElement("p");
+    slots.textContent = `Huecos libres: ${room.freeSlots.join(", ")}`;
+    card.append(title, meta, slots);
+    list.append(card);
+  });
+
+  elements.availabilityResult.append(summary, list);
+}
+
+function roomOptionsForSite(site) {
+  const options = new Map();
+  state.allRows
+    .filter((row) => (!site || row.site === site) && row.room !== "Sin aula")
+    .forEach((row) => {
+      const key = roomAvailabilityKey(row);
+      if (!options.has(key)) {
+        options.set(key, { key, room: row.room, site: row.site, floor: row.floor });
+      }
+    });
+  return [...options.values()].sort(
+    (a, b) => a.site.localeCompare(b.site, "es") || a.room.localeCompare(b.room, "es")
+  );
+}
+
+function roomAvailabilityKey(row) {
+  return `${row.site}|${row.room}`;
+}
+
+function formatRoomOption(option, selectedSite = "") {
+  return selectedSite ? option.room : `${option.room} (${option.site})`;
 }
 
 function roomOccupiedSlots(rows) {
